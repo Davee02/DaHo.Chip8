@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29230.47
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaHo.Chip8", "DaHo.Chip8\DaHo.Chip8.csproj", "{D0A67BB6-CC91-4B3E-B1BC-0C991DA8915A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaHo.Chip8.Cpu", "DaHo.Chip8.Cpu\DaHo.Chip8.Cpu.csproj", "{9DF7309B-0C1B-497C-8F36-0A4831DEF5AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D0A67BB6-CC91-4B3E-B1BC-0C991DA8915A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0A67BB6-CC91-4B3E-B1BC-0C991DA8915A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0A67BB6-CC91-4B3E-B1BC-0C991DA8915A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0A67BB6-CC91-4B3E-B1BC-0C991DA8915A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DF7309B-0C1B-497C-8F36-0A4831DEF5AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DF7309B-0C1B-497C-8F36-0A4831DEF5AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DF7309B-0C1B-497C-8F36-0A4831DEF5AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DF7309B-0C1B-497C-8F36-0A4831DEF5AB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D0962B58-62D1-452E-BB3D-3A1674642785}
+	EndGlobalSection
+EndGlobal

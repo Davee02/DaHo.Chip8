@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DaHo.Chip8": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\David\\Downloads\\Landing.ch8\""
+    }
+  }
+}
