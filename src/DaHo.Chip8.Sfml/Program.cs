@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using SFML.System;
-using DaHo.Chip8.Sfml;
+using System.Diagnostics;
 
 namespace DaHo.Chip8.Sfml
 {
@@ -15,6 +15,8 @@ namespace DaHo.Chip8.Sfml
         private readonly Chip8Emu _cpu;
         private readonly SfmlPPU _sfmlPPU;
         private readonly InputDevice _inputDevice;
+        private int _emulationSpeed = 750;
+        private bool _isPaused = false;
 
         public Program(IReadOnlyList<string> args)
         {
@@ -32,7 +34,7 @@ namespace DaHo.Chip8.Sfml
 
         private void StartGame()
         {
-            var window = new RenderWindow(new VideoMode(Chip8Emu.DISPLAY_WIDTH * 12, Chip8Emu.DISPLAY_HEIGHT * 12), "DaHo.Chip8");
+            var window = new RenderWindow(new VideoMode(Chip8Emu.DISPLAY_WIDTH * 12, Chip8Emu.DISPLAY_HEIGHT * 13), "DaHo.Chip8");
             window.KeyPressed += KeyDown;
             window.KeyReleased += KeyUp;
             window.Closed += OnClosing;
@@ -45,8 +47,12 @@ namespace DaHo.Chip8.Sfml
             while (window.IsOpen)
             {
                 window.DispatchEvents();
-                _cpu.Tick();
-                Thread.Sleep(TimeSpan.FromMilliseconds(1000 / 1000));
+
+                if(!_isPaused)
+                {
+                    _cpu.Tick();
+                    Sleep(1000 / _emulationSpeed);
+                }
             }
         }
 
@@ -54,18 +60,21 @@ namespace DaHo.Chip8.Sfml
         {
             window.SetActive(true);
 
-            var font = new Font(@"res/cascadia.ttf");
-            var text = new Text { Font = font, CharacterSize = 15 };
-            text.Position = new Vector2f(Chip8Emu.DISPLAY_WIDTH * 11, 0);
+            var font = new Font("./res/cascadia.ttf");
+            var registerText = new Text { Font = font, CharacterSize = 15, Position = new Vector2f(Chip8Emu.DISPLAY_WIDTH * 11, 0) };
+            var miscText = new Text { Font = font, CharacterSize = 15, Position = new Vector2f(0, Chip8Emu.DISPLAY_HEIGHT * 11) };
 
             while (window.IsOpen)
             {
                 var debugData = _cpu.GetDebugData();
-                text.DisplayedString = GetRegisterDebugText(debugData);
+                registerText.DisplayedString = GetRegisterDebugText(debugData);
+                miscText.DisplayedString = GetMiscDebugText(debugData);
+
                 window.Clear();
 
                 window.Draw(_sfmlPPU.GetSprite());
-                window.Draw(text);
+                window.Draw(registerText);
+                window.Draw(miscText);
 
                 window.Display();
             }
@@ -83,6 +92,19 @@ namespace DaHo.Chip8.Sfml
             return text;
         }
 
+        private string GetMiscDebugText(DebugData data)
+        {
+            string text = string.Empty;
+
+            text += $"HZ: {_emulationSpeed}\t";
+            text += $"Sound-timer: {data.SoundTimer}{Environment.NewLine}";
+            text += $"PC: {data.Pc}\t";
+            text += $"Delay-timer: {data.DelayTimer}{Environment.NewLine}";
+            text += $"Index: {data.IndexRegister}";
+
+            return text;
+        }
+
         private void OnClosing(object sender, EventArgs e)
         {
             var window = (RenderWindow)sender;
@@ -91,12 +113,35 @@ namespace DaHo.Chip8.Sfml
 
         private void KeyDown(object sender, KeyEventArgs e)
         {
-            _inputDevice.KeyDown(e.Code);
+            switch (e.Code)
+            {
+                case Keyboard.Key.Add:
+                    _emulationSpeed += 10;
+                    break;
+                case Keyboard.Key.Subtract when _emulationSpeed > 10:
+                    _emulationSpeed -= 10;
+                    break;
+                case Keyboard.Key.Pause:
+                    _isPaused = !_isPaused;
+                    break;
+                case Keyboard.Key.Delete:
+                    _cpu.ResetCpu();
+                    break;
+                default:
+                    _inputDevice.KeyDown(e.Code);
+                    break;
+            }
         }
 
         private void KeyUp(object sender, KeyEventArgs e)
         {
             _inputDevice.KeyUp(e.Code);
+        }
+
+        private void Sleep(double milliseconds)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            while (stopwatch.ElapsedMilliseconds < milliseconds) ;
         }
     }
 }

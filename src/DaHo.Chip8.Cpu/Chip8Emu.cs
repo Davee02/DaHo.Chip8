@@ -96,6 +96,18 @@ namespace DaHo.Chip8.Cpu
             opCodeAction(opCodeData);
         }
 
+        public void ResetCpu()
+        {
+            _index = 0;
+            _pc = 0x200;
+            _delayTimer = 0;
+            _soundTimer = 0;
+            _stack.Clear();
+            Array.Clear(_registers, 0, _registers.Length);
+
+            ClearScreen(new OpCodeData());
+        }
+
         public DebugData GetDebugData() =>
             new DebugData(_pc, _soundTimer, _delayTimer, _stack, _registers.ToList(), _index);
 
