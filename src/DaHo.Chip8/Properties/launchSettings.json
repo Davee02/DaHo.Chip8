@@ -2,7 +2,7 @@
   "profiles": {
     "DaHo.Chip8": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\vmadmin\\Desktop\\roms\\invaders"
+      "commandLineArgs": "C:\\Users\\vmadmin\\Desktop\\roms\\blinky"
     }
   }
 }

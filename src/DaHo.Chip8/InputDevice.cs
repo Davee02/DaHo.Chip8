@@ -7,7 +7,7 @@ namespace DaHo.Chip8
 {
     internal class InputDevice : IInputDevice
     {
-        private HashSet<byte> _pressedKeys = new HashSet<byte>(0xF);
+        private readonly HashSet<byte> _pressedKeys = new HashSet<byte>(0xF);
         private readonly Dictionary<Key, byte> _keyMap = new Dictionary<Key, byte>
         {
             { Key.Num1, 0x1 },
@@ -31,7 +31,6 @@ namespace DaHo.Chip8
         public byte[] GetPressedKeys()
         {
             var keys = _pressedKeys.ToArray();
-            _pressedKeys.Clear();
             return keys;
         }
 
@@ -39,6 +38,12 @@ namespace DaHo.Chip8
         {
             if(_keyMap.ContainsKey(key))
                 _pressedKeys.Add(_keyMap[key]);
+        }
+
+        public void KeyUp(Key key)
+        {
+            if (_keyMap.ContainsKey(key))
+                _pressedKeys.Remove(_keyMap[key]);
         }
     }
 }

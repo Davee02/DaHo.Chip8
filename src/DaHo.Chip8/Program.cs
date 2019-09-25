@@ -33,10 +33,11 @@ namespace DaHo.Chip8
         {
             var window = new RenderWindow(new VideoMode(Chip8Emu.DISPLAY_WIDTH * 12, Chip8Emu.DISPLAY_HEIGHT * 12), "DaHo.Chip8");
             window.KeyPressed += KeyDown;
+            window.KeyReleased += KeyUp;
             window.Closed += OnClosing;
             window.SetActive(false);
             window.SetFramerateLimit(Chip8Emu.DISPLAY_HZ);
-            
+
             var renderThread = new Thread(() => RenderLoop(window));
             renderThread.Start();
 
@@ -53,12 +54,13 @@ namespace DaHo.Chip8
             window.SetActive(true);
 
             var font = new Font(@"res/cascadia.ttf");
+            var text = new Text { Font = font, CharacterSize = 15 };
+            text.Position = new Vector2f(Chip8Emu.DISPLAY_WIDTH * 11, 0);
 
             while (window.IsOpen)
             {
                 var debugData = _cpu.GetDebugData();
-                var text = new Text(GetRegisterDebugText(debugData), font, 15);
-                text.Position = new Vector2f(Chip8Emu.DISPLAY_WIDTH * 11, 0);
+                text.DisplayedString = GetRegisterDebugText(debugData);
                 window.Clear();
 
                 window.Draw(_sfmlPPU.GetSprite());
@@ -89,6 +91,11 @@ namespace DaHo.Chip8
         private void KeyDown(object? sender, KeyEventArgs e)
         {
             _inputDevice.KeyDown(e.Code);
+        }
+
+        private void KeyUp(object? sender, KeyEventArgs e)
+        {
+            _inputDevice.KeyUp(e.Code);
         }
     }
 }
