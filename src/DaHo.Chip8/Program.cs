@@ -1,10 +1,11 @@
 ﻿using DaHo.Chip8.Cpu;
 using SFML.Graphics;
-using SFML.System;
 using SFML.Window;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using SFML.System;
 
 namespace DaHo.Chip8
 {
@@ -13,18 +14,16 @@ namespace DaHo.Chip8
         private readonly Chip8Emu _cpu;
         private readonly SfmlPPU _sfmlPPU;
         private readonly InputDevice _inputDevice;
-        private readonly SfmlAudioDevice _audioDevice;
 
-        public Program(string[] args)
+        public Program(IReadOnlyList<string> args)
         {
             _sfmlPPU = new SfmlPPU();
             _inputDevice = new InputDevice();
-            _audioDevice = new SfmlAudioDevice();
 
-            _cpu = new Chip8Emu(new StaticFontLoader(), _audioDevice, _sfmlPPU, _inputDevice, File.ReadAllBytes(args[0]));
+            _cpu = new Chip8Emu(new StaticFontLoader(), new SfmlAudioDevice(), _sfmlPPU, _inputDevice, File.ReadAllBytes(args[0]));
         }
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var program = new Program(args);
             program.StartGame();
@@ -32,22 +31,20 @@ namespace DaHo.Chip8
 
         private void StartGame()
         {
-            var window = new RenderWindow(new VideoMode(Chip8Emu.DISPLAY_WIDTH * 10, Chip8Emu.DISPLAY_HEIGHT * 10), "DaHo.Chip8");
+            var window = new RenderWindow(new VideoMode(Chip8Emu.DISPLAY_WIDTH * 12, Chip8Emu.DISPLAY_HEIGHT * 12), "DaHo.Chip8");
             window.KeyPressed += KeyDown;
             window.Closed += OnClosing;
             window.SetActive(false);
-            window.SetFramerateLimit(60);
-
+            window.SetFramerateLimit(Chip8Emu.DISPLAY_HZ);
+            
             var renderThread = new Thread(() => RenderLoop(window));
             renderThread.Start();
 
-            while(window.IsOpen)
+            while (window.IsOpen)
             {
                 window.DispatchEvents();
-
                 _cpu.Tick();
-
-                Thread.Sleep(TimeSpan.FromMilliseconds(1000 / 750));
+                Thread.Sleep(TimeSpan.FromMilliseconds(1000 / 1000));
             }
         }
 
@@ -55,12 +52,32 @@ namespace DaHo.Chip8
         {
             window.SetActive(true);
 
-            while(window.IsOpen)
+            var font = new Font(@"res/cascadia.ttf");
+
+            while (window.IsOpen)
             {
+                var debugData = _cpu.GetDebugData();
+                var text = new Text(GetRegisterDebugText(debugData), font, 15);
+                text.Position = new Vector2f(Chip8Emu.DISPLAY_WIDTH * 11, 0);
                 window.Clear();
+
                 window.Draw(_sfmlPPU.GetSprite());
+                window.Draw(text);
+
                 window.Display();
             }
+        }
+
+        private string GetRegisterDebugText(DebugData data)
+        {
+            string text = string.Empty;
+            for (var i = 0; i < data.Registers.Count; i++)
+            {
+                var register = data.Registers[i];
+                text += $"V{i:X1}: {register:X2}{Environment.NewLine}";
+            }
+
+            return text;
         }
 
         private void OnClosing(object? sender, EventArgs e)

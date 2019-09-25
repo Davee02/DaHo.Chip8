@@ -9,6 +9,7 @@ namespace DaHo.Chip8.Cpu
     {
         public const ushort DISPLAY_WIDTH = 64;
         public const ushort DISPLAY_HEIGHT = 32;
+        public const ushort DISPLAY_HZ = 60;
 
         private readonly bool[,] _displayBuffer = new bool[DISPLAY_HEIGHT, DISPLAY_WIDTH];
         private readonly byte[] _memory = new byte[0x1000];
@@ -79,7 +80,7 @@ namespace DaHo.Chip8.Cpu
                 {0x65, LoadX},
             };
 
-            var timer = new Timer(1000 / 60);
+            var timer = new Timer(1000 / DISPLAY_HZ);
             timer.Elapsed += On60HzTimerTick;
             timer.Start();
         }
@@ -94,6 +95,9 @@ namespace DaHo.Chip8.Cpu
             _pc += 2;
             opCodeAction(opCodeData);
         }
+
+        public DebugData GetDebugData() =>
+            new DebugData(_pc, _soundTimer, _delayTimer, _stack, _registers.ToList(), _index);
 
         private OpCodeData GetOpCodeData(ushort opCode)
         {
@@ -118,7 +122,7 @@ namespace DaHo.Chip8.Cpu
             if (_opCodes.ContainsKey(opCodeNibble))
                 return _opCodes[opCodeNibble];
 
-            throw new NotImplementedException($"The opcode {opCode:X4} is not implemented");
+            throw new NotSupportedException($"The opcode {opCode:X4} is not supported");
         }
 
         private void On60HzTimerTick(object sender, ElapsedEventArgs e)
@@ -138,7 +142,6 @@ namespace DaHo.Chip8.Cpu
             if (_soundTimer > 0)
                 _audioDevice.PlayBeep();
         }
-
 
 
         private void KeyPressedOps(OpCodeData data)
@@ -307,7 +310,7 @@ namespace DaHo.Chip8.Cpu
             if (_misc0OpCodes.ContainsKey(data.NN))
                 _misc0OpCodes[data.NN](data);
             else
-                throw new NotImplementedException($"The opcode 0{data.NNN:X3} is not implemented");
+                throw new NotSupportedException($"The opcode 0{data.NNN:X3} is not supported");
         }
 
         private void MiscF(OpCodeData data)
@@ -315,7 +318,7 @@ namespace DaHo.Chip8.Cpu
             if (_miscFOpCodes.ContainsKey(data.NN))
                 _miscFOpCodes[data.NN](data);
             else
-                throw new NotImplementedException($"The opcode F{data.NNN:X3} is not implemented");
+                throw new NotSupportedException($"The opcode F{data.NNN:X3} is not supported");
         }
 
         private void ReturnSubroutine(OpCodeData data)
