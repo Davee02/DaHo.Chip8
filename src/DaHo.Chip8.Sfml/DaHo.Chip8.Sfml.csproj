@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <AssemblyName>DaHo.Chip8.Sfml</AssemblyName>
+    <RootNamespace>DaHo.Chip8.Sfml</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

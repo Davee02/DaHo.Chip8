@@ -1,6 +1,6 @@
 ﻿using DaHo.Chip8.Cpu;
 
-namespace DaHo.Chip8
+namespace DaHo.Chip8.Sfml
 {
     internal class StaticFontLoader : IFontLoader
     {

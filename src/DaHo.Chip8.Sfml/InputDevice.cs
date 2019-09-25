@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using static SFML.Window.Keyboard;
 
-namespace DaHo.Chip8
+namespace DaHo.Chip8.Sfml
 {
     internal class InputDevice : IInputDevice
     {

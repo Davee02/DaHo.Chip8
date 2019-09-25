@@ -2,7 +2,7 @@
 using SFML.Audio;
 using System;
 
-namespace DaHo.Chip8
+namespace DaHo.Chip8.Sfml
 {
     internal class SfmlAudioDevice : IAudioDevice
     {

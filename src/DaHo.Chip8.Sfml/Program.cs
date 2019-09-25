@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using SFML.System;
+using DaHo.Chip8.Sfml;
 
-namespace DaHo.Chip8
+namespace DaHo.Chip8.Sfml
 {
     public class Program
     {
@@ -82,18 +83,18 @@ namespace DaHo.Chip8
             return text;
         }
 
-        private void OnClosing(object? sender, EventArgs e)
+        private void OnClosing(object sender, EventArgs e)
         {
             var window = (RenderWindow)sender;
             window.Close();
         }
 
-        private void KeyDown(object? sender, KeyEventArgs e)
+        private void KeyDown(object sender, KeyEventArgs e)
         {
             _inputDevice.KeyDown(e.Code);
         }
 
-        private void KeyUp(object? sender, KeyEventArgs e)
+        private void KeyUp(object sender, KeyEventArgs e)
         {
             _inputDevice.KeyUp(e.Code);
         }

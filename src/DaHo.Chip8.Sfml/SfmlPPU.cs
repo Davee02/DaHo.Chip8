@@ -2,7 +2,7 @@
 using SFML.Graphics;
 using SFML.System;
 
-namespace DaHo.Chip8
+namespace DaHo.Chip8.Sfml
 {
     internal class SfmlPPU : IPPU
     {

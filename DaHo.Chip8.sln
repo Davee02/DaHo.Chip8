@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29230.47
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaHo.Chip8", "src\DaHo.Chip8\DaHo.Chip8.csproj", "{D0A67BB6-CC91-4B3E-B1BC-0C991DA8915A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaHo.Chip8.Sfml", "src\DaHo.Chip8.Sfml\DaHo.Chip8.Sfml.csproj", "{D0A67BB6-CC91-4B3E-B1BC-0C991DA8915A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DaHo.Chip8.Cpu", "src\DaHo.Chip8.Cpu\DaHo.Chip8.Cpu.csproj", "{9DF7309B-0C1B-497C-8F36-0A4831DEF5AB}"
 EndProject
