@@ -2,6 +2,9 @@
 {
     public interface IInputDevice
     {
+        /// <summary>
+        /// Returns all the pressed keys
+        /// </summary>
         byte[] GetPressedKeys();
     }
 }

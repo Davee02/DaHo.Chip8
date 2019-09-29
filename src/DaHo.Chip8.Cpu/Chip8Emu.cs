@@ -10,6 +10,8 @@ namespace DaHo.Chip8.Cpu
         public const ushort DISPLAY_WIDTH = 64;
         public const ushort DISPLAY_HEIGHT = 32;
         public const ushort DISPLAY_HZ = 60;
+        private const int FONT_INDEX = 0x50;
+        private const int ROM_INDEX = 0x200;
 
         private readonly bool[,] _displayBuffer = new bool[DISPLAY_HEIGHT, DISPLAY_WIDTH];
         private readonly byte[] _memory = new byte[0x1000];
@@ -22,7 +24,7 @@ namespace DaHo.Chip8.Cpu
         private readonly Random _rng = new Random();
 
         private ushort _index;
-        private ushort _pc = 0x200;
+        private ushort _pc = ROM_INDEX;
         private ushort _delayTimer;
         private ushort _soundTimer;
         private bool _redrawScreen;
@@ -31,17 +33,16 @@ namespace DaHo.Chip8.Cpu
         private readonly IReadOnlyDictionary<byte, Action<OpCodeData>> _misc0OpCodes;
         private readonly IReadOnlyDictionary<byte, Action<OpCodeData>> _miscFOpCodes;
 
-
         public Chip8Emu(IFontLoader fontLoader, IAudioDevice audioDevice, IPPU ppu, IInputDevice inputDevice, byte[] rom)
         {
             _audioDevice = audioDevice;
             _ppu = ppu;
             _inputDevice = inputDevice;
 
-            Array.Copy(rom, 0, _memory, 0x200, rom.Length);
+            Array.Copy(rom, 0, _memory, ROM_INDEX, rom.Length);
 
             var font = fontLoader.GetFont();
-            Array.Copy(font, 0, _memory, 0x50, font.Length);
+            Array.Copy(font, 0, _memory, FONT_INDEX, font.Length);
 
             _opCodes = new Dictionary<byte, Action<OpCodeData>>
             {
@@ -53,7 +54,7 @@ namespace DaHo.Chip8.Cpu
                 {0x5, SkipXEqualsY },
                 {0x6, SetXToNN },
                 {0x7, AddXToNN },
-                {0x8, Algebra },
+                {0x8, Arithmetic },
                 {0x9, SkipXNotEqualsY },
                 {0xA, SetIToNNN },
                 {0xB, JumpToNNNPlusV0 },
@@ -85,7 +86,9 @@ namespace DaHo.Chip8.Cpu
             timer.Start();
         }
 
-
+        /// <summary>
+        /// Completes a full instruction cycle (fetch, decode, execute)
+        /// </summary>
         public void Tick()
         {
             var opCode = FetchOpCode();
@@ -96,10 +99,14 @@ namespace DaHo.Chip8.Cpu
             opCodeAction(opCodeData);
         }
 
+        /// <summary>
+        /// Resets the CPU to the default values.
+        /// The content of the memory is preserved
+        /// </summary>
         public void ResetCpu()
         {
             _index = 0;
-            _pc = 0x200;
+            _pc = ROM_INDEX;
             _delayTimer = 0;
             _soundTimer = 0;
             _stack.Clear();
@@ -111,7 +118,12 @@ namespace DaHo.Chip8.Cpu
         public DebugData GetDebugData() =>
             new DebugData(_pc, _soundTimer, _delayTimer, _stack, _registers.ToList(), _index);
 
-        private OpCodeData GetOpCodeData(ushort opCode)
+
+        /// <summary>
+        /// Extracts certain bytes and nibbles out of the two bytes long opcode
+        /// </summary>
+        /// <param name="opCode">The two bytes long opcode</param>
+        private static OpCodeData GetOpCodeData(ushort opCode)
         {
             return new OpCodeData
             (
@@ -123,13 +135,18 @@ namespace DaHo.Chip8.Cpu
             );
         }
 
+        /// <summary>
+        /// Reads the next opcode out of the memory
+        /// </summary>
         private ushort FetchOpCode()
         {
+            // Read the two bytes of OpCode (big endian).
             return (ushort)(_memory[_pc] << 8 | _memory[_pc + 1]);
         }
 
         private Action<OpCodeData> DecodeOpCode(ushort opCode)
         {
+            // Look up the OpCode using the first nibble
             var opCodeNibble = (byte)(opCode >> 12);
             if (_opCodes.ContainsKey(opCodeNibble))
                 return _opCodes[opCodeNibble];
@@ -155,168 +172,9 @@ namespace DaHo.Chip8.Cpu
                 _audioDevice.PlayBeep();
         }
 
-
-        private void KeyPressedOps(OpCodeData data)
-        {
-            var keys = _inputDevice.GetPressedKeys();
-            switch (data.NN)
-            {
-                case 0x9E:
-                    if (keys.Contains(_registers[data.X]))
-                        _pc += 2;
-                    break;
-                case 0xA1:
-                    if (!keys.Contains(_registers[data.X]))
-                        _pc += 2;
-                    break;
-            }
-        }
-
-        private void DrawSprite(OpCodeData data)
-        {
-            byte x = _registers[data.X];
-            byte y = _registers[data.Y];
-            byte height = data.N;
-            _registers[0xF] = 0;
-
-            for (int yline = 0; yline < height; yline++)
-            {
-                var spriteLine = _memory[_index + yline];
-
-                for (int xline = 0; xline < 8; xline++)
-                {
-                    byte xCoord = (byte)((x + xline) % DISPLAY_WIDTH);
-                    byte yCoord = (byte)((y + yline) % DISPLAY_HEIGHT);
-
-                    var spriteBit = ((spriteLine >> (7 - xline)) & 1);
-                    var oldBit = _displayBuffer[yCoord, xCoord] ? 1 : 0;
-
-                    if (oldBit != spriteBit)
-                        _redrawScreen = true;
-
-                    // New bit is XOR of existing and new.
-                    var newBit = oldBit ^ spriteBit;
-
-                    _displayBuffer[yCoord, xCoord] = newBit == 1;
-
-                    // If we wiped out a pixel, set flag for collission.
-                    if (oldBit == 1 && newBit == 0)
-                        _registers[0xF] = 1;
-                }
-            }
-        }
-
-        private void SetRandomX(OpCodeData data)
-        {
-            _registers[data.X] = (byte)(_rng.Next(0, 0xFF) & data.NN);
-        }
-
-        private void JumpToNNNPlusV0(OpCodeData data)
-        {
-            _pc = (ushort)(data.NNN + _registers[0]);
-        }
-
-        private void SetIToNNN(OpCodeData data)
-        {
-            _index = data.NNN;
-        }
-
-        private void SkipXNotEqualsY(OpCodeData data)
-        {
-            if (_registers[data.X] != _registers[data.Y])
-                _pc += 2;
-        }
-
-        private void Algebra(OpCodeData data)
-        {
-            switch (data.N)
-            {
-                case 0x0:
-                    _registers[data.X] = _registers[data.Y];
-                    break;
-                case 0x1:
-                    _registers[data.X] |= _registers[data.Y];
-                    break;
-                case 0x2:
-                    _registers[data.X] &= _registers[data.Y];
-                    break;
-                case 0x3:
-                    _registers[data.X] ^= _registers[data.Y];
-                    break;
-                case 0x4:
-                    if (_registers[data.X] + _registers[data.Y] > 0xFF)
-                        _registers[0xF] = 1;
-                    else
-                        _registers[0xF] = 0;
-
-                    _registers[data.X] += _registers[data.Y];
-                    break;
-                case 0x5:
-                    if (_registers[data.X] - _registers[data.Y] < 0)
-                        _registers[0xF] = 0;
-                    else
-                        _registers[0xF] = 1;
-
-                    _registers[data.X] -= _registers[data.Y];
-                    break;
-                case 0x6:
-                    _registers[0xF] = (byte)(_registers[data.X] & 0b0000_0001);
-                    _registers[data.X] = (byte)(_registers[data.X] >> 0x1);
-                    break;
-                case 0x7:
-                    if (_registers[data.Y] - _registers[data.X] < 0)
-                        _registers[0xF] = 0;
-                    else
-                        _registers[0xF] = 1;
-
-                    _registers[data.X] = (byte)(_registers[data.Y] - _registers[data.X]);
-                    break;
-                case 0xE:
-                    _registers[0xF] = (byte)(_registers[data.X] >> 7);
-                    _registers[data.X] = (byte)(_registers[data.X] << 0x1);
-                    break;
-            }
-        }
-
-        private void AddXToNN(OpCodeData data)
-        {
-            _registers[data.X] += data.NN;
-        }
-
-        private void SetXToNN(OpCodeData data)
-        {
-            _registers[data.X] = data.NN;
-        }
-
-        private void SkipXEqualsY(OpCodeData data)
-        {
-            if (_registers[data.X] == _registers[data.Y])
-                _pc += 2;
-        }
-
-        private void SkipXNotEqualsNN(OpCodeData data)
-        {
-            if (_registers[data.X] != data.NN)
-                _pc += 2;
-        }
-
-        private void SkipXEqualsNN(OpCodeData data)
-        {
-            if (_registers[data.X] == data.NN)
-                _pc += 2;
-        }
-
-        private void CallSubroutine(OpCodeData data)
-        {
-            _stack.Push(_pc);
-            _pc = data.NNN;
-        }
-
-        private void JumpToNNN(OpCodeData data)
-        {
-            _pc = data.NNN;
-        }
-
+        /// <summary>
+        /// Executes the opcode beginning with 0x0
+        /// </summary>
         private void Misc0(OpCodeData data)
         {
             if (_misc0OpCodes.ContainsKey(data.NN))
@@ -325,7 +183,10 @@ namespace DaHo.Chip8.Cpu
                 throw new NotSupportedException($"The opcode 0{data.NNN:X3} is not supported");
         }
 
-        private void MiscF(OpCodeData data)
+        /// <summary>
+        /// Executes the opcode beginning with 0xF
+        /// </summary>
+         private void MiscF(OpCodeData data)
         {
             if (_miscFOpCodes.ContainsKey(data.NN))
                 _miscFOpCodes[data.NN](data);
@@ -333,11 +194,248 @@ namespace DaHo.Chip8.Cpu
                 throw new NotSupportedException($"The opcode F{data.NNN:X3} is not supported");
         }
 
+        /// <summary>
+		/// Skips the next instruction based on the key at VX being pressed / not pressed.
+		/// </summary>
+        private void KeyPressedOps(OpCodeData data)
+        {
+            var keys = _inputDevice.GetPressedKeys();
+            switch (data.NN)
+            {
+                case 0x9E:
+                    // If key is pressed
+                    if (keys.Contains(_registers[data.X]))
+                        _pc += 2;
+                    break;
+                case 0xA1:
+                    // If key is NOT pressed
+                    if (!keys.Contains(_registers[data.X]))
+                        _pc += 2;
+                    break;
+            }
+        }
+
+        /// <summary>
+		/// Draws an N-byte sprite from register I at (VX / VY). Sets VF=1 a collision occures 
+		/// </summary>
+        private void DrawSprite(OpCodeData data)
+        {
+            byte x = _registers[data.X]; // The x coordinate of the sprite
+            byte y = _registers[data.Y]; // The y coordinate of the sprite
+            byte height = data.N; // The height of the sprite
+            _registers[0xF] = 0; // Set VF to 0 before we start drawing the sprite
+
+            for (int yline = 0; yline < height; yline++) // Loop through all the lines of the sprite (defined by the height)
+            {
+                var spriteLine = _memory[_index + yline]; // One horizontal 8bit long line of the sprite.
+
+                for (int xline = 0; xline < 8; xline++) // Loop through all individual bits of the line
+                {
+                    byte xCoord = (byte)((x + xline) % DISPLAY_WIDTH); // The x xoordinate of the pixel
+                    byte yCoord = (byte)((y + yline) % DISPLAY_HEIGHT); // The y xoordinate of the pixel
+
+                    var spriteBit = ((spriteLine >> (7 - xline)) & 1); // The new pixel
+                    var oldBit = _displayBuffer[yCoord, xCoord] ? 1 : 0; // The current drawn pixel
+
+                    // If the new pixel isn't equal to the old, the screen has to be redrawn ( = refresh it)
+                    if (oldBit != spriteBit)
+                        _redrawScreen = true;
+
+                    // New bit is XOR of existing and new.
+                    var newBit = oldBit ^ spriteBit;
+
+                    _displayBuffer[yCoord, xCoord] = newBit == 1;
+
+                    // If we wiped out a pixel, set flag for collission (VF = 1)
+                    if (oldBit == 1 && newBit == 0)
+                        _registers[0xF] = 1;
+                }
+            }
+        }
+
+        /// <summary>
+		/// ANDs a random number with NN and stores in VX
+		/// </summary>
+        private void SetRandomX(OpCodeData data)
+        {
+            _registers[data.X] = (byte)(_rng.Next(0, 0xFF) & data.NN);
+        }
+
+        /// <summary>
+		/// Sets the I register to NNN
+		/// </summary>
+        private void SetIToNNN(OpCodeData data)
+        {
+            _index = data.NNN;
+        }
+
+
+        /// <summary>
+        /// Performs some kind of math on VX
+        /// </summary>
+        /// <param name="data"></param>
+        private void Arithmetic(OpCodeData data)
+        {
+            switch (data.N)
+            {
+                case 0x0:
+                    // Store the value of register VY in register VX
+                    _registers[data.X] = _registers[data.Y];
+                    break;
+                case 0x1:
+                    // Set VX to VX OR VY
+                    _registers[data.X] |= _registers[data.Y];
+                    break;
+                case 0x2:
+                    // Set VX to VX AND VY
+                    _registers[data.X] &= _registers[data.Y];
+                    break;
+                case 0x3:
+                    // Set VX to VX XOR VY
+                    _registers[data.X] ^= _registers[data.Y];
+                    break;
+                case 0x4:
+                    // Add the value of register VY to register VX
+                    // Set VF to 1 if a carry occurs
+                    // Set VF to 0 if a carry does not occur
+                    if (_registers[data.X] + _registers[data.Y] > 0xFF)
+                        _registers[0xF] = 1;
+                    else
+                        _registers[0xF] = 0;
+
+                    _registers[data.X] += _registers[data.Y];
+                    break;
+                case 0x5:
+                    // Subtract the value of register VY from register VX
+                    // Set VF to 00 if a borrow occurs
+                    // Set VF to 01 if a borrow does not occur
+                    if (_registers[data.X] - _registers[data.Y] < 0)
+                        _registers[0xF] = 0;
+                    else
+                        _registers[0xF] = 1;
+
+                    _registers[data.X] -= _registers[data.Y];
+                    break;
+                case 0x6:
+                    // Store the value of register VX shifted right one bit in register VX
+                    // Set register VF to the least significant bit prior to the shift
+                    _registers[0xF] = (byte)(_registers[data.X] & 0b0000_0001);
+                    _registers[data.X] = (byte)(_registers[data.X] >> 0x1);
+                    break;
+                case 0x7:
+                    // Set register VX to the value of VY minus VX
+                    // Set VF to 00 if a borrow occurs
+                    // Set VF to 01 if a borrow does not occur
+                    if (_registers[data.Y] - _registers[data.X] < 0)
+                        _registers[0xF] = 0;
+                    else
+                        _registers[0xF] = 1;
+
+                    _registers[data.X] = (byte)(_registers[data.Y] - _registers[data.X]);
+                    break;
+                case 0xE:
+                    // Store the value of register VX shifted left one bit in register VX
+                    // Set register VF to the most significant bit prior to the shift
+                    _registers[0xF] = (byte)(_registers[data.X] >> 7);
+                    _registers[data.X] = (byte)(_registers[data.X] << 0x1);
+                    break;
+                default:
+                    throw new NotSupportedException($"{data.N:X1} is not supported");
+            }
+        }
+
+        /// <summary>
+        /// Adds NN to VX
+        /// </summary>
+        private void AddXToNN(OpCodeData data)
+        {
+            _registers[data.X] += data.NN;
+        }
+
+        /// <summary>
+		/// Sets the value of VX to NN
+		/// </summary>
+        private void SetXToNN(OpCodeData data)
+        {
+            _registers[data.X] = data.NN;
+        }
+
+        /// <summary>
+		/// Skips the next instruction if VX != VY
+		/// </summary>
+        private void SkipXNotEqualsY(OpCodeData data)
+        {
+            if (_registers[data.X] != _registers[data.Y])
+                _pc += 2;
+        }
+
+        /// <summary>
+		/// Skips the next instruction if VX == VY
+		/// </summary>
+        private void SkipXEqualsY(OpCodeData data)
+        {
+            if (_registers[data.X] == _registers[data.Y])
+                _pc += 2;
+        }
+
+        /// <summary>
+		/// Skips the next instruction if VX != NN
+		/// </summary>
+        private void SkipXNotEqualsNN(OpCodeData data)
+        {
+            if (_registers[data.X] != data.NN)
+                _pc += 2;
+        }
+
+        /// <summary>
+		/// Skips the next instruction if VX == NN
+		/// </summary>
+        private void SkipXEqualsNN(OpCodeData data)
+        {
+            if (_registers[data.X] == data.NN)
+                _pc += 2;
+        }
+
+        /// <summary>
+		/// Jumps to subroutine NNN 
+        /// Unlike Jump, this pushes the previous program counter to the stack to allow return
+		/// </summary>
+        private void CallSubroutine(OpCodeData data)
+        {
+            _stack.Push(_pc);
+            _pc = data.NNN;
+        }
+
+        /// <summary>
+		/// Jumps to location NNN 
+        /// Not a subroutine, so old program counter is not pushed to the stack
+		/// </summary>
+        private void JumpToNNN(OpCodeData data)
+        {
+            _pc = data.NNN;
+        }
+
+        /// <summary>
+		/// Jumps to location NNN + V0
+        /// Not a subroutine, so old program counter is not pushed to the stack
+		/// </summary>
+        private void JumpToNNNPlusV0(OpCodeData data)
+        {
+            _pc = (ushort)(data.NNN + _registers[0]);
+        }
+
+        /// <summary>
+        /// Returns from a subroutine with setting the program-counter to the top most element on the stack
+        /// </summary>
+        /// <param name="data"></param>
         private void ReturnSubroutine(OpCodeData data)
         {
             _pc = _stack.Pop();
         }
 
+        /// <summary>
+        /// Clears the screen (set all fixels to false/>
+        /// </summary>
         private void ClearScreen(OpCodeData data)
         {
             for (int y = 0; y < DISPLAY_HEIGHT; y++)
@@ -351,18 +449,28 @@ namespace DaHo.Chip8.Cpu
             _redrawScreen = true;
         }
 
+        /// <summary>
+        /// Loads all registers from the address in register I
+        /// </summary>
         private void LoadX(OpCodeData data)
         {
             for (var i = 0; i <= data.X; i++)
                 _registers[i] = _memory[_index + i];
         }
 
+        /// <summary>
+        /// Saves all registers from the address in register I
+        /// </summary>
         private void SetX(OpCodeData data)
         {
             for (var i = 0; i <= data.X; i++)
                 _memory[_index + i] = _registers[i];
         }
 
+        /// <summary>
+		/// Takes the decimal representation of VX and puts each character into memory locations
+		/// starting at I (with a maximum of 3)
+		/// </summary
         private void SetIToBCD(OpCodeData data)
         {
             _memory[_index] = (byte)(_registers[data.X] / 100);
@@ -370,10 +478,14 @@ namespace DaHo.Chip8.Cpu
             _memory[_index + 2] = (byte)((_registers[data.X] % 100) % 10);
         }
 
+        /// <summary>
+		/// Sets I to the correct location of the font sprite VX
+		/// Each font sprite is 5 bytes long.
+		/// </summary>
         private void SetIToFont(OpCodeData data)
         {
             var font = _registers[data.X];
-            _index = (ushort)(0x50 + font * 5);
+            _index = (ushort)(FONT_INDEX + (font * 5));
         }
 
         private void AddXToI(OpCodeData data)
@@ -386,25 +498,37 @@ namespace DaHo.Chip8.Cpu
             _index += _registers[data.X];
         }
 
+        /// <summary>
+        /// Sets the sound timer to the value of VX
+        /// </summary>
         private void SetSoundTimer(OpCodeData data)
         {
             _soundTimer = _registers[data.X];
         }
 
+        /// <summary>
+        /// Sets the delay timer to the value of VX
+        /// </summary>
         private void SetDelayTimer(OpCodeData data)
         {
             _delayTimer = _registers[data.X];
         }
 
+        /// <summary>
+		/// Waits for a key to be pressed by looping at the current instruction
+		/// </summary>
         private void AwaitAndStoreKeyPress(OpCodeData data)
         {
             var keys = _inputDevice.GetPressedKeys();
-            if (!keys.Any())
+            if (keys.Length == 0)
                 _pc -= 2;
             else
                 _registers[data.X] = keys[0];
         }
 
+        /// <summary>
+        /// Sets VX to the value of the delay timer
+        /// </summary>
         private void SetXToTimer(OpCodeData data)
         {
             _registers[data.X] = (byte)_delayTimer;

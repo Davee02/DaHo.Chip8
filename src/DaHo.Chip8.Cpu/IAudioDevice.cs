@@ -2,6 +2,9 @@
 {
     public interface IAudioDevice
     {
+        /// <summary>
+        /// Plays a single beep-sound
+        /// </summary>
         void PlayBeep();
     }
 }

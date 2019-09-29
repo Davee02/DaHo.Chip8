@@ -98,9 +98,9 @@ namespace DaHo.Chip8.Sfml
 
             text += $"HZ: {_emulationSpeed}\t";
             text += $"Sound-timer: {data.SoundTimer}{Environment.NewLine}";
-            text += $"PC: {data.Pc}\t";
+            text += $"PC: 0x{data.Pc:X}\t";
             text += $"Delay-timer: {data.DelayTimer}{Environment.NewLine}";
-            text += $"Index: {data.IndexRegister}";
+            text += $"Index: 0x{data.IndexRegister:X}{Environment.NewLine}";
 
             return text;
         }
@@ -115,7 +115,7 @@ namespace DaHo.Chip8.Sfml
         {
             switch (e.Code)
             {
-                case Keyboard.Key.Add:
+                case Keyboard.Key.Add when _emulationSpeed < 900:
                     _emulationSpeed += 10;
                     break;
                 case Keyboard.Key.Subtract when _emulationSpeed > 10:
@@ -138,7 +138,7 @@ namespace DaHo.Chip8.Sfml
             _inputDevice.KeyUp(e.Code);
         }
 
-        private void Sleep(double milliseconds)
+        private static void Sleep(double milliseconds)
         {
             var stopwatch = Stopwatch.StartNew();
             while (stopwatch.ElapsedMilliseconds < milliseconds) ;

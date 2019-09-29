@@ -1,6 +1,6 @@
 ﻿namespace DaHo.Chip8.Cpu
 {
-    internal struct OpCodeData
+    internal readonly struct OpCodeData
     {
         public OpCodeData(ushort nnn, byte nn, byte n, byte x, byte y)
         {
@@ -11,14 +11,14 @@
             Y = y;
         }
 
-        public ushort NNN { get; }
+        public readonly ushort NNN { get; }
 
-        public byte NN { get; }
+        public readonly byte NN { get; }
 
-        public byte N { get; }
+        public readonly byte N { get; }
 
-        public byte X { get; }
+        public readonly byte X { get; }
 
-        public byte Y { get; }
+        public readonly byte Y { get; }
     }
 }
