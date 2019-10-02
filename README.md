@@ -5,12 +5,11 @@
 [![MIT License][license-shield]][license-url]
 
 
-
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
   <a href="https://github.com/Davee02/DaHo.Chip8">
-    <img src="res/img/logo.png" alt="Logo" width="80" height="80">
+    <img src="res/img/logo.png" alt="Logo">
   </a>
 
   <h3 align="center">DaHo.Chip8</h3>
@@ -27,16 +26,17 @@
 </p>
 
 
-
 ## Table of Contents
 
-* [About the Project](#about-the-project)
-  * [Built With](#built-with)
-* [Usage](#usage)
-* [Contributing](#contributing)
-* [License](#license)
-* [Acknowledgements](#acknowledgements)
-
+- [Table of Contents](#table-of-contents)
+- [About The Project](#about-the-project)
+  - [Built With](#built-with)
+- [Usage](#usage)
+  - [Key Mapping](#key-mapping)
+- [Contributing](#contributing)
+- [Screenshots](#screenshots)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 
 <!-- ABOUT THE PROJECT -->
@@ -48,6 +48,7 @@ This is a CHIP-8 emulator written in C#. Because it's using the .NET-Core 3.0 fr
 The rendering of the sprites and the audio (a beep) is done with SFML.
 
 ### Built With
+* [Visual Studio Code](https://code.visualstudio.com/)
 * [.NET Core](https://dotnet.microsoft.com/download/dotnet-core)
 * [SFML](https://www.sfml-dev.org/tutorials/2.5/)
 
@@ -91,13 +92,16 @@ Contributions are what make the open source community such an amazing place to b
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## Additional Screenshots
+## Screenshots
+![Connect 4](./res/img/connect4.png)
+![Space Invaders](./res/img/invaders.png)
+![Pong](./res/img/pong.png)
+![Tetris](./res/img/tetris.png)
 
 <!-- LICENSE -->
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
@@ -105,7 +109,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 * [CHIP-8 emulator tutorial](http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/)
 * [EmuDev subreddit](https://www.reddit.com/r/EmuDev/)
 * [CHIP-8 test ROM](https://github.com/corax89/chip8-test-rom)
-
 
 <!-- MARKDOWN LINKS & IMAGES -->
 [contributors-shield]: https://img.shields.io/github/contributors/Davee02/DaHo.Chip8.svg?style=flat-square
@@ -118,4 +121,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 [issues-url]: https://github.com/Davee02/DaHo.Chip8/issues
 [license-shield]: https://img.shields.io/github/license/Davee02/DaHo.Chip8.svg?style=flat-square
 [license-url]: https://github.com/Davee02/DaHo.Chip8/blob/master/LICENSE.txt
-[product-screenshot]: images/screenshot.png
+[product-screenshot]: ./res/img/running_emu.png

@@ -2,7 +2,7 @@
   "profiles": {
     "DaHo.Chip8": {
       "commandName": "Project",
-      "commandLineArgs": "\"C:\\Users\\David\\Desktop\\roms\\blinky\""
+      "commandLineArgs": "\"C:\\Users\\David\\Desktop\\roms\\connect4\""
     }
   }
 }
