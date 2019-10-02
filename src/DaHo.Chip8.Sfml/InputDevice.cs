@@ -30,8 +30,7 @@ namespace DaHo.Chip8.Sfml
 
         public byte[] GetPressedKeys()
         {
-            var keys = _pressedKeys.ToArray();
-            return keys;
+            return _pressedKeys.ToArray();
         }
 
         public void KeyDown(Key key)

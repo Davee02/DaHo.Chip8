@@ -234,7 +234,7 @@ namespace DaHo.Chip8.Cpu
                     byte xCoord = (byte)((x + xline) % DISPLAY_WIDTH); // The x xoordinate of the pixel
                     byte yCoord = (byte)((y + yline) % DISPLAY_HEIGHT); // The y xoordinate of the pixel
 
-                    var spriteBit = ((spriteLine >> (7 - xline)) & 1); // The new pixel
+                    var spriteBit = (spriteLine >> (7 - xline)) & 1; // The new pixel
                     var oldBit = _displayBuffer[yCoord, xCoord] ? 1 : 0; // The current drawn pixel
 
                     // If the new pixel isn't equal to the old, the screen has to be redrawn ( = refresh it)
